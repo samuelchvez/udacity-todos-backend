@@ -16,3 +16,5 @@ export const authConfig = {
 ```
 
 *Note:* region is `us-east-2` not `us-east-1` as config.ts original default.
+
+*Client repo:* https://github.com/samuelchvez/udacity-todos-client
