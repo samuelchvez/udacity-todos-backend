@@ -1,10 +1,39 @@
-import 'source-map-support/register'
+import 'source-map-support/register';
+import {
+  APIGatewayProxyEvent,
+  APIGatewayProxyResult,
+} from 'aws-lambda';
+import * as middy from 'middy';
+import { cors } from 'middy/middlewares';
+import { TodosAccess } from '../../dataLayer/todosAccess';
+import { parseUserId } from '../auth/utils';
 
-import { APIGatewayProxyEvent, APIGatewayProxyResult, APIGatewayProxyHandler } from 'aws-lambda'
 
-export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-  const todoId = event.pathParameters.todoId
+const todosAccess = new TodosAccess();
 
-  // TODO: Remove a TODO item by id
-  return undefined
-}
+export const handler = middy(
+  async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+    const { headers, pathParameters } = event;
+    const { todoId } = pathParameters;
+    const userId = parseUserId(headers.Authorization);
+    const todoToDelete = await todosAccess.getTodo(userId, todoId);
+
+    try {
+      await todosAccess.deleteTodo(userId, todoToDelete);
+    
+      return {
+        statusCode: 204,
+        body: '',
+      };
+    } catch (e) {
+      return {
+        statusCode: 403,
+        body: e.message,
+      };
+    }
+  }
+);
+
+
+handler
+  .use(cors({ credentials: true }));
